@@ -1,0 +1,142 @@
+"use client";
+
+import Navigation from "@/components/navigation";
+import Footer from "@/components/footer";
+import { motion } from "framer-motion";
+import { Target, Shield, Zap } from "lucide-react";
+import Image from "next/image";
+
+export default function AboutPage() {
+  const animations = {
+    fadeUp: {
+      initial: { opacity: 0, y: 30 },
+      whileInView: { opacity: 1, y: 0 },
+      viewport: { once: true },
+      transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const }
+    },
+    fadeRight: {
+      initial: { opacity: 0, x: -30 },
+      whileInView: { opacity: 1, x: 0 },
+      viewport: { once: true },
+      transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const }
+    }
+  };
+
+  return (
+    <>
+      <Navigation />
+      <main className="bg-black text-white min-h-screen">
+        {/* Hero Section */}
+        <section className="pt-32 pb-24 relative overflow-hidden">
+          <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-fuchsia-900/10 blur-[120px] rounded-full pointer-events-none" />
+          
+          <div className="container-xl">
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
+              <motion.div {...animations.fadeRight}>
+                <span className="badge mb-6 inline-flex">About Akronix</span>
+                <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold tracking-tight mb-8">
+                  We build the <span className="gradient-text-primary">architectural bedrock</span> of the future.
+                </h1>
+                <p className="text-xl text-white/50 leading-relaxed mb-10 max-w-xl">
+                  Akronix was born from a simple observation: most software is built for today, not tomorrow. We partner with visionaries to build digital products that aren&apos;t just functional, but legendary.
+                </p>
+                
+                <div className="grid sm:grid-cols-2 gap-6">
+                  {[
+                    { title: "Our Mission", desc: "To accelerate human progress through world-class engineering.", color: "#5B4DFF" },
+                    { title: "Our Passion", desc: "High-performance code that feels like magic to the user.", color: "#F08A8A" },
+                  ].map((item, i) => (
+                    <motion.div 
+                      key={i} 
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.1 * i }}
+                      className="card p-6 border-white/5 bg-white/[0.02]"
+                    >
+                      
+                      <h2 className="font-bold text-xl mb-3">{item.title}</h2>
+                      <p className="text-sm text-white/40 leading-relaxed">{item.desc}</p>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+
+              {/* Team Image Section — Replacing "Vision" text */}
+              <motion.div 
+                {...animations.fadeUp}
+                className="relative aspect-square rounded-3xl overflow-hidden group"
+              >
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10" />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20 z-10" />
+                
+                {/* Blended Team Image */}
+                <Image 
+                  src="/team.png"
+                  alt="Our Team"
+                  fill
+                  className="object-cover scale-105 group-hover:scale-100 transition-transform duration-1000 opacity-80"
+                />
+                
+                {/* Overlay Elements */}
+                <div className="absolute bottom-8 left-8 z-20">
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.4 }}
+                    className="glass-card px-6 py-4 rounded-2xl border-white/10"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex -space-x-2">
+                        {[1, 2, 3].map(i => (
+                          <div key={i} className="w-8 h-8 rounded-full border-2 border-black bg-fuchsia-900/20" />
+                        ))}
+                      </div>
+                      <span className="text-sm font-bold text-white/80">World-class Engineers</span>
+                    </div>
+                  </motion.div>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+        {/* Culture / Values Section */}
+        <section className="py-24 bg-white/[0.01] border-y border-white/5">
+          <div className="container-xl">
+            <div className="text-center mb-16">
+              <motion.h2 {...animations.fadeUp} className="text-3xl md:text-5xl font-black mb-6">Our Core <span className="gradient-text-primary">Values</span></motion.h2>
+              <motion.p {...animations.fadeUp} className="text-white/40 max-w-2xl mx-auto italic font-medium">
+                &quot;Excellence is not an act, but a habit.&quot;
+              </motion.p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8">
+              {[
+                { icon: Zap, title: "Velocity", desc: "We ship at startup speed without compromising on security or architecture." },
+                { icon: Shield, title: "Integrity", desc: "Transparent communication and unbreakable commitments to our partners." },
+                { icon: Target, title: "Precision", desc: "Meticulous attention to detail in every line of code and pixel of design." },
+              ].map((value, i) => (
+                <motion.div 
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.1 * i }}
+                  className="p-8 rounded-3xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.02] transition-colors"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-fuchsia-900/10 flex items-center justify-center text-cyan-700 mb-6">
+                    <value.icon size={24} />
+                  </div>
+                  <h3 className="text-xl font-bold mb-4">{value.title}</h3>
+                  <p className="text-sm text-white/40 leading-relaxed">{value.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
+      <Footer />
+    </>
+  );
+}
