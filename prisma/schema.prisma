@@ -1,0 +1,467 @@
+// Akronix SaaS Platform - Prisma Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  CLIENT
+  USER
+}
+
+enum ProjectStatus {
+  PENDING
+  IN_REVIEW
+  IN_PROGRESS
+  REVIEW
+  COMPLETED
+  CANCELLED
+  ON_HOLD
+}
+
+enum ProjectPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  CANCELLED
+  PAST_DUE
+  TRIALING
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL
+  CONVERTED
+  LOST
+}
+
+enum ServiceType {
+  SAAS_DEVELOPMENT
+  MVP_DEVELOPMENT
+  LANDING_PAGE
+  CUSTOM_WEB_APP
+  DIGITAL_MARKETING
+  CLOUD_DEPLOYMENT
+  AI_AUTOMATION
+  NETWORKING
+}
+
+enum BlogStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum MessageStatus {
+  UNREAD
+  READ
+  REPLIED
+  ARCHIVED
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  emailVerified     DateTime?
+  name              String?
+  image             String?
+  hashedPassword    String?
+  role              UserRole  @default(USER)
+  isActive          Boolean   @default(true)
+  
+  // Profile
+  phone             String?
+  company           String?
+  country           String?
+  bio               String?   
+  
+  // Auth
+  emailVerifyToken  String?   @unique
+  resetPasswordToken String?  @unique
+  resetPasswordExpiry DateTime?
+  
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  lastLoginAt       DateTime?
+  
+  // Relations
+  accounts          Account[]
+  sessions          Session[]
+  projects          Project[]
+  invoices          Invoice[]
+  subscriptions     Subscription[]
+  messages          Message[]    @relation("UserMessages")
+  sentMessages      Message[]    @relation("SentMessages")
+  
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? 
+  session_state     String?
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Project {
+  id              String          @id @default(cuid())
+  title           String
+  description     String          
+  status          ProjectStatus   @default(PENDING)
+  priority        ProjectPriority @default(MEDIUM)
+  serviceType     ServiceType
+  budget          Float?
+  deadline        DateTime?
+  requirements    String?        
+  attachments     String?
+  notes           String?         
+  
+  // Progress tracking
+  progress        Int             @default(0) // 0-100
+  milestones      Milestone[]
+  
+  // Relations
+  clientId        String
+  client          User            @relation(fields: [clientId], references: [id])
+  invoices        Invoice[]
+  messages        Message[]
+  
+  // Timestamps
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  completedAt     DateTime?
+  
+  @@map("projects")
+}
+
+model Milestone {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  
+  completed   Boolean  @default(false)
+  dueDate     DateTime?
+  completedAt DateTime?
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("milestones")
+}
+
+model Service {
+  id          String      @id @default(cuid())
+  name        String
+  slug        String      @unique
+  type        ServiceType @unique
+  description String      
+  shortDesc   String
+  features    String?
+  icon        String?
+  isActive    Boolean     @default(true)
+  isComingSoon Boolean    @default(false)
+  displayOrder Int        @default(0)
+  
+  // Pricing relations
+  pricingPlans PricingPlan[]
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  @@map("services")
+}
+
+model PricingPlan {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String
+  price       Float
+  currency    String   @default("USD")
+  billingCycle String  @default("monthly") // monthly, quarterly, yearly, one-time
+  features    String?
+  isPopular   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  maxProjects Int?
+  maxUsers    Int?
+  storageGB   Int?
+  
+  serviceId   String?
+  service     Service? @relation(fields: [serviceId], references: [id])
+  subscriptions Subscription[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("pricing_plans")
+}
+
+model Subscription {
+  id             String             @id @default(cuid())
+  status         SubscriptionStatus @default(ACTIVE)
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean        @default(false)
+  
+  userId         String
+  user           User               @relation(fields: [userId], references: [id])
+  planId         String
+  plan           PricingPlan        @relation(fields: [planId], references: [id])
+  
+  // Stripe-compatible fields
+  externalId     String?            @unique // Stripe subscription ID
+  
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  
+  @@map("subscriptions")
+}
+
+model Invoice {
+  id          String        @id @default(cuid())
+  invoiceNo   String        @unique // e.g., AKX-2024-001
+  title       String
+  description String?      
+  amount      Float
+  tax         Float         @default(0)
+  total       Float
+  currency    String        @default("USD")
+  status      InvoiceStatus @default(DRAFT)
+  dueDate     DateTime
+  paidAt      DateTime?
+  notes       String?      
+  
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  projectId   String?
+  project     Project?      @relation(fields: [projectId], references: [id])
+  
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  @@map("invoices")
+}
+
+model Lead {
+  id          String     @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String
+  phone       String?
+  company     String?
+  country     String?
+  website     String?
+  message     String    
+  serviceType String?
+  budget      String?
+  status      LeadStatus @default(NEW)
+  source      String?    // e.g., "homepage", "services page"
+  notes       String?    
+  
+  // UTM tracking
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  @@map("leads")
+}
+
+model BlogPost {
+  id            String     @id @default(cuid())
+  title         String
+  slug          String     @unique
+  excerpt       String    
+  content       String     
+  coverImage    String?
+  status        BlogStatus @default(DRAFT)
+  publishedAt   DateTime?
+  
+  // SEO
+  metaTitle     String?
+  metaDescription String?
+  keywords      String?
+  
+  // Relations
+  authorId      String
+  author        AdminUser  @relation(fields: [authorId], references: [id])
+  tags          Tag[]
+  
+  // Analytics
+  views         Int        @default(0)
+  
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  
+  @@map("blog_posts")
+}
+
+model Tag {
+  id    String     @id @default(cuid())
+  name  String     @unique
+  slug  String     @unique
+  posts BlogPost[]
+  
+  @@map("tags")
+}
+
+model CaseStudy {
+  id            String   @id @default(cuid())
+  title         String
+  slug          String   @unique
+  clientName    String
+  clientLogo    String?
+  industry      String
+  serviceType   ServiceType
+  challenge     String  
+  solution      String  
+  results       String  
+  metrics       Json?    // e.g., {"revenue": "+120%", "users": "50K"}
+  coverImage    String?
+  images        String?
+  techStack     String?
+  isPublished   Boolean  @default(false)
+  isFeatured    Boolean  @default(false)
+  testimonialId String?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@map("case_studies")
+}
+model Blog {
+  id      String @id @default(cuid())
+  title   String
+  content String
+}
+
+model Testimonial {
+  id          String   @id @default(cuid())
+  authorName  String
+  authorTitle String
+  authorImage String?
+  company     String
+  content     String  
+  rating      Int      @default(5) // 1-5
+  isPublished Boolean  @default(true)
+  isFeatured  Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("testimonials")
+}
+
+model Message {
+  id         String        @id @default(cuid())
+  subject    String
+  content    String     
+  status     MessageStatus @default(UNREAD)
+  
+  senderId   String
+  sender     User          @relation("SentMessages", fields: [senderId], references: [id])
+  recipientId String
+  recipient   User         @relation("UserMessages", fields: [recipientId], references: [id])
+  
+  projectId  String?
+  project    Project?      @relation(fields: [projectId], references: [id])
+  
+  parentId   String?
+  parent     Message?      @relation("Replies", fields: [parentId], references: [id])
+  replies    Message[]     @relation("Replies")
+  
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  
+  @@map("messages")
+}
+
+model Newsletter {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  isActive    Boolean  @default(true)
+  
+  createdAt   DateTime @default(now())
+  
+  @@map("newsletter")
+}
+
+model AdminUser {
+  id             String     @id @default(cuid())
+  email          String     @unique
+  name           String
+  hashedPassword String
+  role           UserRole   @default(ADMIN)
+  isActive       Boolean    @default(true)
+  
+  blogPosts      BlogPost[]
+  
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  
+  @@map("admin_users")
+}
