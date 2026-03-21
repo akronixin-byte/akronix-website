@@ -1,13 +1,11 @@
 // Akronix SaaS Platform - Prisma Schema
-// Database: PostgreSQL
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  // url      = env("DATABASE_URL")
+  provider = "sqlite"
 }
 
 // ─── Enums ───────────────────────────────────────────────────────────────────
@@ -101,7 +99,7 @@ model User {
   phone             String?
   company           String?
   country           String?
-  bio               String?   @db.Text
+  bio               String?   
   
   // Auth
   emailVerifyToken  String?   @unique
@@ -131,12 +129,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String? 
   session_state     String?
   
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -168,15 +166,15 @@ model VerificationToken {
 model Project {
   id              String          @id @default(cuid())
   title           String
-  description     String          @db.Text
+  description     String          
   status          ProjectStatus   @default(PENDING)
   priority        ProjectPriority @default(MEDIUM)
   serviceType     ServiceType
   budget          Float?
   deadline        DateTime?
-  requirements    String?         @db.Text
-  attachments     String[]        // Array of file URLs
-  notes           String?         @db.Text
+  requirements    String?        
+  attachments     String?
+  notes           String?         
   
   // Progress tracking
   progress        Int             @default(0) // 0-100
@@ -199,7 +197,7 @@ model Project {
 model Milestone {
   id          String   @id @default(cuid())
   title       String
-  description String?  @db.Text
+  description String?  
   completed   Boolean  @default(false)
   dueDate     DateTime?
   completedAt DateTime?
@@ -218,9 +216,9 @@ model Service {
   name        String
   slug        String      @unique
   type        ServiceType @unique
-  description String      @db.Text
+  description String      
   shortDesc   String
-  features    String[]    // Array of feature strings
+  features    String?
   icon        String?
   isActive    Boolean     @default(true)
   isComingSoon Boolean    @default(false)
@@ -243,7 +241,7 @@ model PricingPlan {
   price       Float
   currency    String   @default("USD")
   billingCycle String  @default("monthly") // monthly, quarterly, yearly, one-time
-  features    String[]
+  features    String?
   isPopular   Boolean  @default(false)
   isActive    Boolean  @default(true)
   maxProjects Int?
@@ -285,7 +283,7 @@ model Invoice {
   id          String        @id @default(cuid())
   invoiceNo   String        @unique // e.g., AKX-2024-001
   title       String
-  description String?       @db.Text
+  description String?      
   amount      Float
   tax         Float         @default(0)
   total       Float
@@ -293,7 +291,7 @@ model Invoice {
   status      InvoiceStatus @default(DRAFT)
   dueDate     DateTime
   paidAt      DateTime?
-  notes       String?       @db.Text
+  notes       String?      
   
   userId      String
   user        User          @relation(fields: [userId], references: [id])
@@ -315,12 +313,12 @@ model Lead {
   company     String?
   country     String?
   website     String?
-  message     String     @db.Text
-  serviceType ServiceType?
+  message     String    
+  serviceType String?
   budget      String?
   status      LeadStatus @default(NEW)
   source      String?    // e.g., "homepage", "services page"
-  notes       String?    @db.Text
+  notes       String?    
   
   // UTM tracking
   utmSource   String?
@@ -337,8 +335,8 @@ model BlogPost {
   id            String     @id @default(cuid())
   title         String
   slug          String     @unique
-  excerpt       String     @db.Text
-  content       String     @db.Text
+  excerpt       String    
+  content       String     
   coverImage    String?
   status        BlogStatus @default(DRAFT)
   publishedAt   DateTime?
@@ -346,7 +344,7 @@ model BlogPost {
   // SEO
   metaTitle     String?
   metaDescription String?
-  keywords      String[]
+  keywords      String?
   
   // Relations
   authorId      String
@@ -379,13 +377,13 @@ model CaseStudy {
   clientLogo    String?
   industry      String
   serviceType   ServiceType
-  challenge     String   @db.Text
-  solution      String   @db.Text
-  results       String   @db.Text
+  challenge     String  
+  solution      String  
+  results       String  
   metrics       Json?    // e.g., {"revenue": "+120%", "users": "50K"}
   coverImage    String?
-  images        String[]
-  techStack     String[]
+  images        String?
+  techStack     String?
   isPublished   Boolean  @default(false)
   isFeatured    Boolean  @default(false)
   testimonialId String?
@@ -395,6 +393,11 @@ model CaseStudy {
   
   @@map("case_studies")
 }
+model Blog {
+  id      String @id @default(cuid())
+  title   String
+  content String
+}
 
 model Testimonial {
   id          String   @id @default(cuid())
@@ -402,7 +405,7 @@ model Testimonial {
   authorTitle String
   authorImage String?
   company     String
-  content     String   @db.Text
+  content     String  
   rating      Int      @default(5) // 1-5
   isPublished Boolean  @default(true)
   isFeatured  Boolean  @default(false)
@@ -416,7 +419,7 @@ model Testimonial {
 model Message {
   id         String        @id @default(cuid())
   subject    String
-  content    String        @db.Text
+  content    String     
   status     MessageStatus @default(UNREAD)
   
   senderId   String
