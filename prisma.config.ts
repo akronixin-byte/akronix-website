@@ -1,6 +1,8 @@
+import path from "path";
+
 export default {
-  schema: 'prisma/schema.prisma',
+  schema: "prisma/schema.prisma",
   datasource: {
-    url: 'postgresql://postgres:postgres@localhost:5432/akronix?schema=public',
+    url: "file:./dev.db",
   },
-}
+};
